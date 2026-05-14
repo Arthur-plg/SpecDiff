@@ -57,7 +57,15 @@ interface Experiment {
 
 // --- Components ---
 
-const MetricCard = ({ title, value, unit, icon: Icon, color = "cyan" }: any) => (
+interface MetricCardProps {
+  title: string;
+  value: string | number | undefined;
+  unit: string;
+  icon: React.ElementType;
+  color?: "cyan" | "emerald" | "purple";
+}
+
+const MetricCard = ({ title, value, unit, icon: Icon, color = "cyan" }: MetricCardProps) => (
   <motion.div 
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -79,7 +87,12 @@ const MetricCard = ({ title, value, unit, icon: Icon, color = "cyan" }: any) => 
   </motion.div>
 );
 
-const ChartContainer = ({ title, children }: any) => (
+interface ChartContainerProps {
+  title: string;
+  children: React.ReactNode;
+}
+
+const ChartContainer = ({ title, children }: ChartContainerProps) => (
   <div className="glass-card p-6 rounded-2xl flex flex-col gap-6">
     <div className="flex items-center justify-between">
       <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-widest flex items-center gap-2">
@@ -100,6 +113,25 @@ export default function Dashboard() {
   const [isDragging, setIsDragging] = useState(false);
 
   // --- Logic ---
+  React.useEffect(() => {
+    // Auto-load demo data if available in public folder
+    fetch("/data.csv")
+      .then(res => res.text())
+      .then(csvText => {
+        if (csvText && csvText.startsWith("timestamp")) {
+          Papa.parse(csvText, {
+            header: true,
+            dynamicTyping: true,
+            complete: (results) => {
+              const newExps = results.data.filter((row: any) => row.method) as Experiment[];
+              setData(newExps);
+            }
+          });
+        }
+      })
+      .catch(() => console.log("No default data found, waiting for upload."));
+  }, []);
+
   const handleFileUpload = useCallback((files: FileList | null) => {
     if (!files) return;
     
