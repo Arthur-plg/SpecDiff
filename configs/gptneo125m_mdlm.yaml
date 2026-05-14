@@ -1,0 +1,11 @@
+target:
+  model_name: "EleutherAI/gpt-neo-125M"
+  device: "cuda"
+
+draft:
+  model_name: "kuleshov-group/mdlm-no_flashattn-fp32-owt"
+  device: "cuda"
+
+prompt: "The importance of speculative decoding in large language models lies in"
+max_new_tokens: 128
+results_dir: "results"
