@@ -7,6 +7,14 @@ SpecDiff is a state-of-the-art framework designed to accelerate large-scale diff
 
 The system is optimized for **NVIDIA T4 GPUs**, demonstrating that research-grade speedups (up to 2.5x) are achievable on accessible cloud infrastructure through careful hyperparameter orchestration.
 
+## 🧠 Technical Implementation
+This framework implements the core logic described in the paper **"Speculative Diffusion Decoding: Accelerating Language Generation through Diffusion" (arXiv:2408.05636)**.
+
+### Key Engineering Choices:
+- **Greedy Variant**: We implement the greedy verification variant of Algorithm 1. This is optimized for deterministic inference (Temperature = 0), ensuring maximum stability and ITL (Inter-Token Latency) reduction.
+- **Vocabulary Alignment**: The engine includes a model-agnostic `align_logits` layer to bridge potential discrepancies between the MDLM draft tokenizer and various Target LLMs (GPT-2, GPT-Neo, RedPajama).
+- **Parallel Verification**: Full utilization of PyTorch vectorization to verify draft blocks of up to $\gamma=64$ in a single forward pass.
+
 ## 📁 Project Structure
 ```text
 SpecDiff_project/
