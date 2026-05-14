@@ -43,21 +43,14 @@ pip install -e .
 
 ## 📊 Analytics & Dashboards
 
-### 1. Premium Research Dashboard (Next.js)
-**The primary research platform.** Built with Next.js, Tailwind, and Framer Motion. It features:
-- **Optimization Heatmaps**: γ vs T sensitivity analysis.
-- **Scaling Analysis**: Speedup tracking across model sizes (1.3B to 2.7B).
-- **Acceptance Dynamics**: α-rate correlation vs throughput.
-- **Hardware Metrics**: Benchmarking on constrained infrastructure.
+### 1. Live Research Platform (Next.js + Vercel)
+**The official public dashboard.** Hosted on Vercel for instant sharing and professional analysis.
+- **Auto-loading**: Displays latest experiment results by default.
+- **Interactive**: Full research-grade charts (Scaling, Heatmaps, α-Impact).
+- **Public URL**: `https://specdiff-analytics.vercel.app` (Replace with your actual URL)
 
-```bash
-cd specdiff-analytics
-npm install
-npm run dev
-```
-
-### 2. Quick Dashboard (Streamlit)
-For fast, local visualization of raw CSV logs.
+### 2. Local Quick Dashboard (Streamlit)
+For fast, local visualization of raw CSV logs on your machine.
 ```bash
 streamlit run dashboard/app.py
 ```
