@@ -35,6 +35,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--max_new_tokens", type=int, default=None)
     parser.add_argument("--prompt", type=str, default=None)
+    parser.add_argument("--results_dir", type=str, default=None,
+                        help="Override results directory (e.g. /content/drive/MyDrive/specdiff_results)")
     return parser.parse_args()
 
 
@@ -55,6 +57,8 @@ def main():
         config.max_new_tokens = args.max_new_tokens
     if args.prompt is not None:
         config.prompt = args.prompt
+    if args.results_dir is not None:
+        config.results_dir = args.results_dir
 
     grid = list(product(args.gammas, args.T_values))
     total_runs = 1 + len(grid)  # AR baseline + all (gamma, T) combinations

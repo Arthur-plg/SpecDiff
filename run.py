@@ -5,6 +5,9 @@ Usage:
     python run.py --config configs/redpajama_mdlm.yaml
     python run.py --config configs/gptneo_mdlm.yaml --gamma 6 --T 3
     python run.py --config configs/gpt2xl_mdlm.yaml --max_new_tokens 128 --prompt "Once upon a time"
+
+On Google Colab (redirect results to Drive):
+    !python run.py --config configs/redpajama_mdlm.yaml --results_dir /content/drive/MyDrive/specdiff_results
 """
 
 import argparse
@@ -23,6 +26,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--T", type=int, default=None, help="Override diffusion steps")
     parser.add_argument("--max_new_tokens", type=int, default=None, help="Override token budget")
     parser.add_argument("--prompt", type=str, default=None, help="Override generation prompt")
+    parser.add_argument("--results_dir", type=str, default=None,
+                        help="Override results directory (e.g. /content/drive/MyDrive/specdiff_results)")
     return parser.parse_args()
 
 
@@ -51,6 +56,8 @@ def main():
         config.max_new_tokens = args.max_new_tokens
     if args.prompt is not None:
         config.prompt = args.prompt
+    if args.results_dir is not None:
+        config.results_dir = args.results_dir
 
     print(f"\n{'='*60}")
     print(f"  SpecDiff Benchmark — {args.config}")

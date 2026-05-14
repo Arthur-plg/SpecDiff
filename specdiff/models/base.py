@@ -19,6 +19,10 @@ class BaseTargetModel(ABC):
     and produces the final accepted sequence.
     """
 
+    def __init__(self, model_name: str, device: str, dtype: str = "float16"):
+        """All target model wrappers must accept these three constructor args."""
+        ...
+
     @abstractmethod
     def get_logits(self, input_ids: Tensor) -> Tensor:
         """
@@ -66,6 +70,10 @@ class BaseDraftModel(ABC):
     conditioned on a prompt. These candidates are then verified in
     parallel by the target model (Algorithm 1 of SpecDiff).
     """
+
+    def __init__(self, model_name: str, device: str):
+        """All draft model wrappers must accept these two constructor args."""
+        ...
 
     @abstractmethod
     def generate_draft(self, prompt_ids: Tensor, gamma: int, T: int) -> Tensor:
