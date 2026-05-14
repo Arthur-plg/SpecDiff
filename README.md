@@ -43,17 +43,11 @@ pip install -e .
 
 ## 📊 Analytics & Dashboards
 
-### 1. Live Research Platform (Next.js + Vercel)
+### Live Research Platform (Next.js + Vercel)
 **The official public dashboard.** Hosted on Vercel for instant sharing and professional analysis.
 - **Auto-loading**: Displays latest experiment results by default.
 - **Interactive**: Full research-grade charts (Scaling, Heatmaps, α-Impact).
 - **Public URL**: `https://specdiff-analytics.vercel.app` (Replace with your actual URL)
-
-### 2. Local Quick Dashboard (Streamlit)
-For fast, local visualization of raw CSV logs on your machine.
-```bash
-streamlit run dashboard/app.py
-```
 
 ## 🧪 Running Experiments
 
