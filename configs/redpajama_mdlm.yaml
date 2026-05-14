@@ -1,0 +1,16 @@
+# RedPajama-3B + MDLM draft — default experiment config
+target:
+  model_name: "togethercomputer/RedPajama-INCITE-Base-3B-v1"
+  wrapper: "RedPajama3BModel"
+  dtype: "float16"
+
+draft:
+  model_name: "kuleshov-group/mdlm-no_flashattn-fp32-owt"
+  wrapper: "MDLMDraftModel"
+
+device: "cuda"
+gamma: 4
+T: 5
+max_new_tokens: 256
+prompt: "The future of artificial intelligence is"
+results_dir: "results"

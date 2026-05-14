@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "specdiff"
+version = "0.1.0"
+description = "Speculative Diffusion Decoding — modular benchmarking framework"
+requires-python = ">=3.10"
+dependencies = [
+    "torch",
+    "transformers==4.38.2",
+    "pandas",
+    "pyyaml",
+    "streamlit",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["specdiff*"]

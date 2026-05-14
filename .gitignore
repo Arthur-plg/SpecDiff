@@ -20,3 +20,8 @@ specdiff_benchmark.zip
 specdiff_framework.zip
 *.bin
 *.safetensors
+
+# Experiment outputs
+results/
+__pycache__/
+*.egg-info/

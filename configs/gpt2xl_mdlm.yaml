@@ -1,0 +1,16 @@
+# GPT-2 XL + MDLM draft — reference configuration from original SpecDiff experiments
+target:
+  model_name: "gpt2-xl"
+  wrapper: "DefaultTargetModel"
+  dtype: "float16"
+
+draft:
+  model_name: "kuleshov-group/mdlm-no_flashattn-fp32-owt"
+  wrapper: "MDLMDraftModel"
+
+device: "cuda"
+gamma: 4
+T: 5
+max_new_tokens: 256
+prompt: "The future of artificial intelligence is"
+results_dir: "results"

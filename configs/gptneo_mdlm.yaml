@@ -1,0 +1,16 @@
+# GPT-Neo 1.3B + MDLM draft — same vocabulary, no alignment needed
+target:
+  model_name: "EleutherAI/gpt-neo-1.3B"
+  wrapper: "DefaultTargetModel"
+  dtype: "float16"
+
+draft:
+  model_name: "kuleshov-group/mdlm-no_flashattn-fp32-owt"
+  wrapper: "MDLMDraftModel"
+
+device: "cuda"
+gamma: 4
+T: 5
+max_new_tokens: 256
+prompt: "The future of artificial intelligence is"
+results_dir: "results"
