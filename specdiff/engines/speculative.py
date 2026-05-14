@@ -103,6 +103,11 @@ class SpeculativeEngine:
                 # --- Step 1: Draft generation ---
                 draft_tokens = self.draft.generate_draft(generated_ids, gamma, T)
 
+                # Safety Clip: Ensure draft tokens are within target model's vocab range
+                # (Prevents CUDA out-of-bounds if MDLM proposes its MASK token)
+                target_vocab_size = self.target.tokenizer.vocab_size
+                draft_tokens = torch.clamp(draft_tokens, 0, target_vocab_size - 1)
+
                 # --- Step 2: Parallel verification ---
                 verify_ids = torch.cat([generated_ids, draft_tokens], dim=1)
                 logits = self.target.get_logits(verify_ids)
