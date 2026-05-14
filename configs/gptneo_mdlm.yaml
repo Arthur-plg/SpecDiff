@@ -1,6 +1,6 @@
-# GPT-Neo 1.3B + MDLM draft — same vocabulary, no alignment needed
+# GPT-Neo 2.7B + MDLM draft — same vocabulary, no alignment needed
 target:
-  model_name: "EleutherAI/gpt-neo-1.3B"
+  model_name: "EleutherAI/gpt-neo-2.7B"
   wrapper: "DefaultTargetModel"
   dtype: "float16"
 
