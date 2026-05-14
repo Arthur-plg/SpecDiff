@@ -3,7 +3,9 @@
 A modular, high-performance benchmarking framework for **Speculative Diffusion Decoding** using Masked Diffusion Language Models (MDLM).
 
 ## 🚀 Overview
-SpecDiff aims to accelerate large-scale diffusion language models by using a smaller, faster draft model to propose tokens, which are then verified in parallel by the target model. This framework provides a professional-grade research environment to analyze speedups, acceptance rates (α), and latency across different model architectures.
+SpecDiff is a state-of-the-art framework designed to accelerate large-scale diffusion language models. Unlike traditional speculative decoding, we utilize a **Masked Diffusion Language Model (MDLM)** as a high-fidelity draft model, allowing for non-autoregressive token proposals.
+
+The system is optimized for **NVIDIA T4 GPUs**, demonstrating that research-grade speedups (up to 2.5x) are achievable on accessible cloud infrastructure through careful hyperparameter orchestration.
 
 ## 📁 Project Structure
 ```text
@@ -42,16 +44,20 @@ pip install -e .
 ## 📊 Analytics & Dashboards
 
 ### 1. Premium Research Dashboard (Next.js)
-The gold standard for analysis. Feature-rich, interactive, and publication-ready charts.
+**The primary research platform.** Built with Next.js, Tailwind, and Framer Motion. It features:
+- **Optimization Heatmaps**: γ vs T sensitivity analysis.
+- **Scaling Analysis**: Speedup tracking across model sizes (1.3B to 2.7B).
+- **Acceptance Dynamics**: α-rate correlation vs throughput.
+- **Hardware Metrics**: Benchmarking on constrained infrastructure.
+
 ```bash
 cd specdiff-analytics
 npm install
 npm run dev
 ```
-*Open http://localhost:3000 and drag & drop your CSV logs.*
 
 ### 2. Quick Dashboard (Streamlit)
-For fast, local visualization of your latest runs.
+For fast, local visualization of raw CSV logs.
 ```bash
 streamlit run dashboard/app.py
 ```
