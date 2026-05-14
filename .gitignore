@@ -18,6 +18,7 @@ logs/
 # Project specific
 specdiff_benchmark.zip
 specdiff_framework.zip
+MODIFICATIONS_MDLM_REPO.txt
 *.bin
 *.safetensors
 
