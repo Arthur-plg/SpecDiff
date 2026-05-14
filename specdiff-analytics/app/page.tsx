@@ -200,11 +200,20 @@ export default function Dashboard() {
       <main className="max-w-7xl mx-auto flex flex-col gap-12">
         {/* Header */}
         <header className="flex flex-col gap-2">
-          <div className="flex items-center gap-3">
-             <div className="w-8 h-8 cyan-gradient rounded-lg flex items-center justify-center neon-border">
-                <Activity size={18} className="text-white" />
-             </div>
-             <span className="text-sm font-bold tracking-[0.2em] text-cyan-400 uppercase">Research Environment</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 cyan-gradient rounded-lg flex items-center justify-center neon-border">
+                  <Activity size={18} className="text-white" />
+              </div>
+              <span className="text-sm font-bold tracking-[0.2em] text-cyan-400 uppercase">Research Environment</span>
+            </div>
+            <a 
+              href="https://github.com/Arthur-plg/SpecDiff" 
+              target="_blank" 
+              className="px-4 py-2 rounded-full glass-card text-xs font-bold flex items-center gap-2 hover:bg-white/10 transition-colors"
+            >
+              <Database size={14} /> View on GitHub
+            </a>
           </div>
           <h1 className="text-6xl font-extrabold tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-white to-zinc-500">
             SpecDiff Analytics
@@ -214,6 +223,31 @@ export default function Dashboard() {
             Real-time insights from Masked Diffusion Language Models (MDLM).
           </p>
         </header>
+
+        {/* Research Context Section */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="glass-card p-6 rounded-2xl border-l-4 border-cyan-500">
+             <h3 className="text-sm font-bold text-white mb-2 uppercase tracking-tighter">The Problem</h3>
+             <p className="text-xs text-zinc-400 leading-relaxed">
+                Large Language Models are slow because they generate tokens one-by-one. 
+                Autoregressive decoding is limited by memory bandwidth, making inference expensive at scale.
+             </p>
+          </div>
+          <div className="glass-card p-6 rounded-2xl border-l-4 border-purple-500">
+             <h3 className="text-sm font-bold text-white mb-2 uppercase tracking-tighter">The Solution</h3>
+             <p className="text-xs text-zinc-400 leading-relaxed">
+                We use <strong>Speculative Decoding</strong>: a small, fast "Draft" model (MDLM) proposes multiple tokens 
+                that the large "Target" model verifies in a single parallel step.
+             </p>
+          </div>
+          <div className="glass-card p-6 rounded-2xl border-l-4 border-emerald-500">
+             <h3 className="text-sm font-bold text-white mb-2 uppercase tracking-tighter">The Impact</h3>
+             <p className="text-xs text-zinc-400 leading-relaxed">
+                By optimizing <strong>Gamma (γ)</strong> and <strong>T steps</strong>, we achieve significant 
+                throughput gains (up to 2.5x) without compromising the output quality of the original model.
+             </p>
+          </div>
+        </section>
 
         {/* Data Dropzone */}
         {data.length === 0 ? (
