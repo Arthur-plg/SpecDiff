@@ -225,26 +225,29 @@ export default function Dashboard() {
         </header>
 
         {/* Research Context Section */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="glass-card p-6 rounded-2xl border-l-4 border-cyan-500">
-             <h3 className="text-sm font-bold text-white mb-2 uppercase tracking-tighter">SOTA Methodology</h3>
+             <h3 className="text-sm font-bold text-white mb-2 uppercase tracking-tighter">The Challenge</h3>
              <p className="text-xs text-zinc-400 leading-relaxed">
-                We implement <strong>Speculative Diffusion Decoding</strong>, using a <strong>Masked Diffusion Language Model (MDLM)</strong> as a high-fidelity draft model. 
-                This state-of-the-art approach allows for non-autoregressive token proposals, significantly outperforming traditional small-AR drafts.
+                LLMs are slow because they generate tokens one-by-one. <strong>Autoregressive decoding</strong> is limited by memory bandwidth, making inference expensive at scale.
              </p>
           </div>
           <div className="glass-card p-6 rounded-2xl border-l-4 border-purple-500">
-             <h3 className="text-sm font-bold text-white mb-2 uppercase tracking-tighter">Hardware Constrained</h3>
+             <h3 className="text-sm font-bold text-white mb-2 uppercase tracking-tighter">SOTA Methodology</h3>
              <p className="text-xs text-zinc-400 leading-relaxed">
-                Benchmarked on entry-level <strong>NVIDIA T4 GPU (16GB)</strong>. We demonstrate that massive speedups are achievable even on 
-                limited consumer/cloud infrastructure through clever algorithm orchestration and parameter tuning.
+                We use <strong>Speculative Decoding</strong> with a <strong>Masked Diffusion (MDLM)</strong> draft. This state-of-the-art approach allows for non-autoregressive token proposals.
+             </p>
+          </div>
+          <div className="glass-card p-6 rounded-2xl border-l-4 border-amber-500">
+             <h3 className="text-sm font-bold text-white mb-2 uppercase tracking-tighter">Hardware Context</h3>
+             <p className="text-xs text-zinc-400 leading-relaxed">
+                Optimized for <strong>NVIDIA T4 GPUs</strong>. We prove that SOTA speedups are achievable on limited infrastructure through clever algorithm tuning.
              </p>
           </div>
           <div className="glass-card p-6 rounded-2xl border-l-4 border-emerald-500">
-             <h3 className="text-sm font-bold text-white mb-2 uppercase tracking-tighter">Key Findings</h3>
+             <h3 className="text-sm font-bold text-white mb-2 uppercase tracking-tighter">Key Impact</h3>
              <p className="text-xs text-zinc-400 leading-relaxed">
-                By optimizing <strong>Gamma (γ)</strong> and <strong>T steps</strong>, we achieve up to <strong>2.5x throughput gains</strong> 
-                across various target models (RedPajama 3B, GPT-Neo 2.7B) while maintaining exact mathematical parity with standard decoding.
+                We achieve up to <strong>2.5x throughput gains</strong> across various models while maintaining exact mathematical parity with standard decoding.
              </p>
           </div>
         </section>
