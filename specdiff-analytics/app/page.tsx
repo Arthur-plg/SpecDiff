@@ -227,24 +227,24 @@ export default function Dashboard() {
         {/* Research Context Section */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="glass-card p-6 rounded-2xl border-l-4 border-cyan-500">
-             <h3 className="text-sm font-bold text-white mb-2 uppercase tracking-tighter">The Problem</h3>
+             <h3 className="text-sm font-bold text-white mb-2 uppercase tracking-tighter">SOTA Methodology</h3>
              <p className="text-xs text-zinc-400 leading-relaxed">
-                Large Language Models are slow because they generate tokens one-by-one. 
-                Autoregressive decoding is limited by memory bandwidth, making inference expensive at scale.
+                We implement <strong>Speculative Diffusion Decoding</strong>, using a <strong>Masked Diffusion Language Model (MDLM)</strong> as a high-fidelity draft model. 
+                This state-of-the-art approach allows for non-autoregressive token proposals, significantly outperforming traditional small-AR drafts.
              </p>
           </div>
           <div className="glass-card p-6 rounded-2xl border-l-4 border-purple-500">
-             <h3 className="text-sm font-bold text-white mb-2 uppercase tracking-tighter">The Solution</h3>
+             <h3 className="text-sm font-bold text-white mb-2 uppercase tracking-tighter">Hardware Constrained</h3>
              <p className="text-xs text-zinc-400 leading-relaxed">
-                We use <strong>Speculative Decoding</strong>: a small, fast "Draft" model (MDLM) proposes multiple tokens 
-                that the large "Target" model verifies in a single parallel step.
+                Benchmarked on entry-level <strong>NVIDIA T4 GPU (16GB)</strong>. We demonstrate that massive speedups are achievable even on 
+                limited consumer/cloud infrastructure through clever algorithm orchestration and parameter tuning.
              </p>
           </div>
           <div className="glass-card p-6 rounded-2xl border-l-4 border-emerald-500">
-             <h3 className="text-sm font-bold text-white mb-2 uppercase tracking-tighter">The Impact</h3>
+             <h3 className="text-sm font-bold text-white mb-2 uppercase tracking-tighter">Key Findings</h3>
              <p className="text-xs text-zinc-400 leading-relaxed">
-                By optimizing <strong>Gamma (γ)</strong> and <strong>T steps</strong>, we achieve significant 
-                throughput gains (up to 2.5x) without compromising the output quality of the original model.
+                By optimizing <strong>Gamma (γ)</strong> and <strong>T steps</strong>, we achieve up to <strong>2.5x throughput gains</strong> 
+                across various target models (RedPajama 3B, GPT-Neo 2.7B) while maintaining exact mathematical parity with standard decoding.
              </p>
           </div>
         </section>
