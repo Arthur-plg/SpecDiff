@@ -244,8 +244,8 @@ export default function Dashboard() {
             SpecDiff Analytics
           </h1>
           <p className="text-zinc-500 max-w-2xl text-lg font-medium leading-relaxed">
-            High-fidelity analysis of speculative diffusion decoding experiments. 
-            Real-time insights from Masked Diffusion Language Models (MDLM).
+            Implementation and high-fidelity analysis of the <strong>SpecDiff research paper</strong>. 
+            Real-time benchmarking of speculative diffusion decoding using Masked Diffusion Language Models (MDLM).
           </p>
         </header>
 
