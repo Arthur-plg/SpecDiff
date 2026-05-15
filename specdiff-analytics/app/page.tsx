@@ -312,10 +312,11 @@ export default function Dashboard() {
                 {/* 1. Parameter Heatmap */}
                 <ChartContainer title="Hyperparameter Sensitivity (gamma x T)">
                   <ResponsiveContainer width="100%" height="100%">
-                    <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                    <ScatterChart margin={{ top: 20, right: 30, bottom: 20, left: 10 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#18181b" vertical={false} />
                       <XAxis type="number" dataKey="gamma" name="Gamma" stroke="#52525b" />
                       <YAxis type="number" dataKey="T" name="T steps" stroke="#52525b" />
-                      <ZAxis type="number" dataKey="speedup" range={[200, 1000]} name="Speedup" />
+                      <ZAxis type="number" dataKey="speedup" range={[400, 401]} />
                       <Tooltip 
                         cursor={{ strokeDasharray: '3 3' }} 
                         contentStyle={{ backgroundColor: "#09090b", border: "1px solid #27272a", borderRadius: "12px" }}
@@ -333,7 +334,14 @@ export default function Dashboard() {
                           return null;
                         }}
                       />
-                      <Scatter data={heatmapData} fill="#22d3ee" shape="circle" />
+                      <Scatter data={heatmapData} shape="rect">
+                        {heatmapData.map((entry, index) => {
+                          // Map speedup (usually 1.0 to 4.0) to color intensity
+                          const intensity = Math.min(Math.max((entry.speedup - 1) / 3, 0), 1);
+                          const color = `rgba(34, 211, 238, ${0.2 + intensity * 0.8})`; // Varying opacity for cyan
+                          return <Cell key={`cell-${index}`} fill={color} stroke="#22d3ee" strokeWidth={0.5} />;
+                        })}
+                      </Scatter>
                     </ScatterChart>
                   </ResponsiveContainer>
                 </ChartContainer>
