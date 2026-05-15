@@ -179,13 +179,23 @@ export default function Dashboard() {
   }, [data]);
 
   const scalingData = useMemo(() => {
-    // Attempt to estimate model size from string
     const models = Array.from(new Set(data.map(d => d.target_model)));
     return models.map(m => {
       const runs = data.filter(d => d.target_model === m && d.method === "SpecDiff");
       const best = runs.length > 0 ? Math.max(...runs.map(r => r.decode_speedup)) : 0;
-      const size = m.includes("2.7B") ? 2.7 : m.includes("1.3B") ? 1.3 : m.includes("xl") ? 1.5 : 1.0;
-      return { name: m, speedup: best, size };
+      
+      // Improved size mapping
+      let size = 1.0;
+      if (m.toLowerCase().includes("125m")) size = 0.125;
+      else if (m.toLowerCase().includes("1.3b")) size = 1.3;
+      else if (m.toLowerCase().includes("2.7b")) size = 2.7;
+      else if (m.toLowerCase().includes("3b")) size = 3.0;
+      else if (m.toLowerCase().includes("xl")) size = 1.5;
+      
+      // Clean name for display
+      const displayName = m.split('/').pop() || m;
+      
+      return { name: displayName, speedup: best, size };
     }).sort((a, b) => a.size - b.size);
   }, [data]);
 
