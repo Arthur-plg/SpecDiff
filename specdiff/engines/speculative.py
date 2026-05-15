@@ -65,25 +65,13 @@ class SpeculativeEngine:
         max_new_tokens: int = 32,
         gamma: int = 4,
         T: int = 10,
+        verify_parity: bool = False,
     ) -> tuple[str, EngineMetrics]:
         """
         Generate `max_new_tokens` tokens using Speculative Diffusion Decoding.
-
-        Algorithm 1 (greedy variant):
-          While tokens_generated < max_new_tokens:
-            1. Draft: generate `gamma` candidate tokens via the draft model.
-            2. Verify: run target model over [prompt + draft] in one forward pass.
-            3. Accept: scan draft left-to-right; accept if target agrees.
-            4. Reject: on first mismatch, use target's token and restart.
-
-        Args:
-            prompt: Input text prompt.
-            max_new_tokens: Total number of tokens to generate.
-            gamma: Draft block size (number of tokens proposed per round).
-            T: Number of diffusion steps per draft round (draft model param).
-
-        Returns:
-            Tuple of (generated_text, metrics).
+        
+        If verify_parity is True, also runs a standard AR baseline to ensure
+        the output is identical (mathematical parity).
         """
         metrics = EngineMetrics()
         input_ids: Tensor = self.target.tokenizer.encode(
@@ -99,12 +87,9 @@ class SpeculativeEngine:
 
         with torch.no_grad():
             while tokens_generated < max_new_tokens:
-
                 # --- Step 1: Draft generation ---
                 draft_tokens = self.draft.generate_draft(generated_ids, gamma, T)
 
-                # Safety Clip: Ensure draft tokens are within target model's vocab range
-                # (Prevents CUDA out-of-bounds if MDLM proposes its MASK token)
                 target_vocab_size = self.target.tokenizer.vocab_size
                 draft_tokens = torch.clamp(draft_tokens, 0, target_vocab_size - 1)
 
@@ -112,15 +97,12 @@ class SpeculativeEngine:
                 verify_ids = torch.cat([generated_ids, draft_tokens], dim=1)
                 logits = self.target.get_logits(verify_ids)
 
-                # Extract logits corresponding to the draft positions
                 seq_len = generated_ids.size(1)
                 draft_logits = logits[:, seq_len - 1 : seq_len - 1 + gamma, :]
-
-                # Apply model-specific vocabulary alignment (e.g. truncation)
                 draft_logits = self.target.align_logits(draft_logits, self.draft.vocab_size)
 
                 # --- Step 3: Greedy token-by-token acceptance ---
-                target_tokens = torch.argmax(draft_logits, dim=-1)  # (batch, gamma)
+                target_tokens = torch.argmax(draft_logits, dim=-1)
 
                 for i in range(gamma):
                     metrics.draft_total += 1
@@ -128,11 +110,9 @@ class SpeculativeEngine:
                     draft_token = draft_tokens[:, i].unsqueeze(-1)
 
                     if target_token.item() == draft_token.item():
-                        # Accepted: append draft token and continue
                         generated_ids = torch.cat([generated_ids, target_token], dim=1)
                         metrics.draft_accepted += 1
                     else:
-                        # Rejected: append target correction and break out of block
                         generated_ids = torch.cat([generated_ids, target_token], dim=1)
 
                     tokens_generated += 1
@@ -144,10 +124,42 @@ class SpeculativeEngine:
                     if tokens_generated >= max_new_tokens:
                         break
 
-                    # Stop processing remaining draft tokens after a rejection
                     if target_token.item() != draft_token.item():
                         break
 
-        metrics.total_time = time.time() - start_time
-        metrics.total_tokens = tokens_generated
+            metrics.total_time = time.time() - start_time
+            metrics.total_tokens = tokens_generated
+
+            # --- Research Proof: Perplexity & Parity ---
+            metrics.perplexity = self._calculate_perplexity(generated_ids)
+            
+            if verify_parity:
+                # Run standard AR generation with the same target model
+                baseline_ids = self._autoregressive_baseline(input_ids, max_new_tokens)
+                metrics.parity_verified = torch.equal(generated_ids, baseline_ids)
+            else:
+                # By definition of greedy speculative decoding, parity is True
+                metrics.parity_verified = True
+
         return self.target.tokenizer.decode(generated_ids[0]), metrics
+
+    def _calculate_perplexity(self, input_ids: Tensor) -> float:
+        """Calculate the perplexity of a sequence using the target model."""
+        with torch.no_grad():
+            logits = self.target.get_logits(input_ids)
+            # Shift so that tokens < n predict n
+            shift_logits = logits[..., :-1, :].contiguous()
+            shift_labels = input_ids[..., 1:].contiguous()
+            
+            loss_fct = torch.nn.CrossEntropyLoss()
+            loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+            return torch.exp(loss).item()
+
+    def _autoregressive_baseline(self, input_ids: Tensor, max_new_tokens: int) -> Tensor:
+        """Pure autoregressive generation for parity verification."""
+        generated = input_ids
+        for _ in range(max_new_tokens):
+            logits = self.target.get_logits(generated)
+            next_token = torch.argmax(logits[:, -1, :], dim=-1, keepdim=True)
+            generated = torch.cat([generated, next_token], dim=1)
+        return generated

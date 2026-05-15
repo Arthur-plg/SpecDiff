@@ -69,4 +69,18 @@ class AREngine:
             metrics.total_tokens += 1
 
         metrics.total_time = time.time() - start_time
+        metrics.perplexity = self._calculate_perplexity(generated_ids)
+        metrics.parity_verified = True # Standard AR is its own reference
         return self.target.tokenizer.decode(generated_ids[0]), metrics
+
+    def _calculate_perplexity(self, input_ids: Tensor) -> float:
+        """Calculate the perplexity of a sequence using the target model."""
+        with torch.no_grad():
+            logits = self.target.get_logits(input_ids)
+            # Shift so that tokens < n predict n
+            shift_logits = logits[..., :-1, :].contiguous()
+            shift_labels = input_ids[..., 1:].contiguous()
+            
+            loss_fct = torch.nn.CrossEntropyLoss()
+            loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+            return torch.exp(loss).item()

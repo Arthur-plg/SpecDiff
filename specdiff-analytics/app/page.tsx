@@ -15,7 +15,11 @@ import {
   ArrowUpRight,
   Database,
   Search,
-  Filter
+  Filter,
+  BookOpen,
+  CheckCircle,
+  XCircle,
+  HelpCircle
 } from "lucide-react";
 import {
   LineChart,
@@ -53,6 +57,8 @@ interface Experiment {
   acceptance_rate_percent: number;
   total_time_sec: number;
   total_tokens: number;
+  perplexity?: number;
+  parity_verified?: boolean;
 }
 
 // --- Components ---
@@ -106,10 +112,86 @@ const ChartContainer = ({ title, children }: ChartContainerProps) => (
   </div>
 );
 
+const SpeculativeDecodingVisualizer = () => {
+  const [step, setStep] = useState(0);
+  
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setStep((s) => (s + 1) % 4);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const steps = [
+    { title: "Draft Proposal", desc: "Fast MDLM model generates a block of γ candidate tokens in parallel.", color: "text-blue-400" },
+    { title: "Parallel Verification", desc: "Large Target model verifies the entire block in a single forward pass.", color: "text-purple-400" },
+    { title: "Greedy Acceptance", desc: "Tokens matching the target model's prediction are accepted instantly.", color: "text-emerald-400" },
+    { title: "Mathematical Parity", desc: "Final output is identical to standard autoregressive decoding.", color: "text-cyan-400" }
+  ];
+
+  return (
+    <div className="glass-card p-8 rounded-3xl flex flex-col lg:flex-row gap-12 items-center">
+      <div className="flex-1 flex flex-col gap-4">
+        <div className="flex items-center gap-2">
+          <div className="px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-[10px] font-bold uppercase tracking-widest">Mechanism</div>
+          <h2 className="text-3xl font-bold">How SpecDiff Works</h2>
+        </div>
+        <div className="h-24">
+          <AnimatePresence mode="wait">
+            <motion.div 
+              key={step}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="flex flex-col gap-2"
+            >
+              <h4 className={cn("text-lg font-bold", steps[step].color)}>{steps[step].title}</h4>
+              <p className="text-zinc-500 text-sm leading-relaxed">{steps[step].desc}</p>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+        <div className="flex gap-2 mt-4">
+          {steps.map((_, i) => (
+            <div key={i} className={cn("h-1 rounded-full transition-all duration-500", i === step ? "w-8 bg-cyan-400" : "w-4 bg-zinc-800")} />
+          ))}
+        </div>
+      </div>
+
+      <div className="flex-1 w-full max-w-md aspect-video bg-zinc-950 rounded-2xl border border-white/5 relative overflow-hidden flex items-center justify-center p-8">
+         <div className="flex gap-4">
+            {[0, 1, 2, 3].map((i) => (
+              <motion.div 
+                key={i}
+                animate={{ 
+                  scale: step >= 1 ? 1.05 : 1,
+                  backgroundColor: step === 0 ? "#2563eb33" : step === 1 ? "#a855f733" : "#10b98133",
+                  borderColor: step === 0 ? "#3b82f6" : step === 1 ? "#a855f7" : "#10b981",
+                  opacity: step === 0 && i > 1 ? 0.3 : 1
+                }}
+                className="w-12 h-16 rounded-lg border-2 flex items-center justify-center font-mono text-xs font-bold"
+              >
+                {step === 0 ? "Draft" : step === 1 ? "Check" : "Pass"}
+              </motion.div>
+            ))}
+         </div>
+         {step === 1 && (
+           <motion.div 
+             initial={{ left: -10 }}
+             animate={{ left: "110%" }}
+             transition={{ duration: 1.5, ease: "linear" }}
+             className="absolute top-0 bottom-0 w-1 bg-gradient-to-b from-transparent via-purple-400 to-transparent shadow-[0_0_20px_rgba(168,85,247,0.5)]"
+           />
+         )}
+      </div>
+    </div>
+  );
+};
+
 // --- Main Page ---
 
 export default function Dashboard() {
   const [data, setData] = useState<Experiment[]>([]);
+  const [selectedModel, setSelectedModel] = useState<string>("EleutherAI/gpt-neo-2.7B");
   const [isDragging, setIsDragging] = useState(false);
 
   // --- Logic ---
@@ -154,6 +236,7 @@ export default function Dashboard() {
       totalRuns: data.length,
       maxSpeedup: Math.max(...data.map(d => d.decode_speedup || 0)),
       avgAlpha: spec_only_avg(specOnly, "acceptance_rate_percent"),
+      avgPpl: spec_only_avg(data, "perplexity"),
       peakThroughput: Math.max(...data.map(d => d.decode_throughput_tok_sec || 0)),
       models: Array.from(new Set(data.map(d => d.target_model))).length
     };
@@ -166,7 +249,7 @@ export default function Dashboard() {
   }
 
   const heatmapData = useMemo(() => {
-    const specOnly = data.filter(d => d.method === "SpecDiff");
+    const specOnly = data.filter(d => d.method === "SpecDiff" && d.target_model === selectedModel);
     // Aggregate by gamma/T for heatmap
     const grid: any = {};
     specOnly.forEach(d => {
@@ -176,7 +259,7 @@ export default function Dashboard() {
       grid[key].count += 1;
     });
     return Object.values(grid).map((g: any) => ({ ...g, speedup: g.speedup / g.count }));
-  }, [data]);
+  }, [data, selectedModel]);
 
   const scalingData = useMemo(() => {
     const models = Array.from(new Set(data.map(d => d.target_model)));
@@ -232,13 +315,22 @@ export default function Dashboard() {
               </div>
               <span className="text-sm font-bold tracking-[0.2em] text-cyan-400 uppercase">Research Environment</span>
             </div>
-            <a 
-              href="https://github.com/Arthur-plg/SpecDiff" 
-              target="_blank" 
-              className="px-4 py-2 rounded-full glass-card text-xs font-bold flex items-center gap-2 hover:bg-white/10 transition-colors"
-            >
-              <Database size={14} /> View on GitHub
-            </a>
+            <div className="flex items-center gap-3">
+              <a 
+                href="https://arxiv.org/abs/2408.05636" 
+                target="_blank" 
+                className="px-4 py-2 rounded-full glass-card text-xs font-bold flex items-center gap-2 hover:bg-white/10 transition-colors border border-zinc-800"
+              >
+                <BookOpen size={14} className="text-cyan-400" /> Read the Paper
+              </a>
+              <a 
+                href="https://github.com/Arthur-plg/SpecDiff" 
+                target="_blank" 
+                className="px-4 py-2 rounded-full glass-card text-xs font-bold flex items-center gap-2 hover:bg-white/10 transition-colors border border-zinc-800"
+              >
+                <Database size={14} /> View on GitHub
+              </a>
+            </div>
           </div>
           <h1 className="text-6xl font-extrabold tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-white to-zinc-500">
             SpecDiff Analytics
@@ -315,8 +407,8 @@ export default function Dashboard() {
             <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <MetricCard title="Best Speedup" value={stats?.maxSpeedup.toFixed(2)} unit="x" icon={Zap} color="cyan" />
               <MetricCard title="Peak Throughput" value={stats?.peakThroughput.toFixed(1)} unit="tok/s" icon={Gauge} color="emerald" />
-              <MetricCard title="Avg Acceptance" value={stats?.avgAlpha.toFixed(1)} unit="%" icon={Activity} color="purple" />
-              <MetricCard title="Models Profiled" value={stats?.models} unit="Units" icon={Database} color="cyan" />
+              <MetricCard title="Avg Perplexity" value={stats?.avgPpl.toFixed(2)} unit="PPL" icon={Activity} color="purple" />
+              <MetricCard title="Avg Acceptance" value={stats?.avgAlpha.toFixed(1)} unit="%" icon={Activity} color="cyan" />
             </section>
 
             {/* Advanced Analytics Tabs */}
@@ -325,8 +417,34 @@ export default function Dashboard() {
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* 1. Parameter Heatmap */}
-                <ChartContainer title="Hyperparameter Sensitivity (gamma x T)">
-                  <ResponsiveContainer width="100%" height="100%">
+                <div className="glass-card p-6 rounded-2xl flex flex-col gap-6">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-widest flex items-center gap-2">
+                      <ChevronRight size={14} className="text-cyan-400" />
+                      Hyperparameter Sensitivity (γ x T)
+                    </h3>
+                    
+                    {/* Model Selector Tabs */}
+                    <div className="flex p-1 bg-zinc-900/50 rounded-lg border border-white/5 overflow-x-auto no-scrollbar">
+                      {Array.from(new Set(data.map(d => d.target_model))).map(model => (
+                        <button
+                          key={model}
+                          onClick={() => setSelectedModel(model)}
+                          className={cn(
+                            "px-3 py-1 rounded-md text-[10px] font-bold uppercase transition-all whitespace-nowrap",
+                            selectedModel === model 
+                              ? "bg-cyan-500 text-white shadow-lg shadow-cyan-500/20" 
+                              : "text-zinc-500 hover:text-zinc-300"
+                          )}
+                        >
+                          {model.split('/').pop()}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
                     <ScatterChart margin={{ top: 20, right: 30, bottom: 20, left: 10 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#18181b" vertical={false} />
                       <XAxis type="number" dataKey="gamma" name="Gamma" stroke="#52525b" />
@@ -359,7 +477,8 @@ export default function Dashboard() {
                       </Scatter>
                     </ScatterChart>
                   </ResponsiveContainer>
-                </ChartContainer>
+                </div>
+              </div>
 
                 {/* 2. Scaling Analysis */}
                 <ChartContainer title="Target Model Scaling Analysis">
@@ -418,6 +537,8 @@ export default function Dashboard() {
               </ChartContainer>
             </section>
 
+            <SpeculativeDecodingVisualizer />
+
             {/* Table Section */}
             <section className="glass-card rounded-3xl overflow-hidden">
                <div className="p-6 border-b border-white/5 flex items-center justify-between">
@@ -435,12 +556,12 @@ export default function Dashboard() {
                        <th className="p-4 px-6">Target Model</th>
                        <th className="p-4 px-6">gamma / T</th>
                        <th className="p-4 px-6">Speedup</th>
-                       <th className="p-4 px-6">Throughput</th>
-                       <th className="p-4 px-6">α Rate</th>
+                       <th className="p-4 px-6">PPL</th>
+                       <th className="p-4 px-6">Parity</th>
                      </tr>
                    </thead>
                    <tbody className="text-sm divide-y divide-white/5">
-                     {data.map((exp, i) => (
+                     {data.map((exp: any, i) => (
                        <tr key={i} className="hover:bg-white/5 transition-colors group">
                          <td className="p-4 px-6 text-zinc-400 font-mono text-[10px]">{new Date(exp.timestamp).toLocaleTimeString()}</td>
                          <td className="p-4 px-6">
@@ -450,22 +571,25 @@ export default function Dashboard() {
                               {exp.method}
                             </span>
                          </td>
-                         <td className="p-4 px-6 font-semibold">{exp.target_model}</td>
+                         <td className="p-4 px-6 font-semibold">{exp.target_model.split('/').pop()}</td>
                          <td className="p-4 px-6 text-zinc-500">{exp.gamma} / {exp.T_steps}</td>
                          <td className="p-4 px-6">
                             <div className="flex items-center gap-1 font-bold text-cyan-400">
-                               {exp.decode_speedup.toFixed(2)}x
+                               {(exp.decode_speedup || 1.0).toFixed(2)}x
                                <ArrowUpRight size={14} />
                             </div>
                          </td>
-                         <td className="p-4 px-6">{exp.decode_throughput_tok_sec.toFixed(1)} <span className="text-zinc-500 text-[10px]">tok/s</span></td>
+                         <td className="p-4 px-6 font-mono text-zinc-400">{(exp.perplexity || 0).toFixed(2)}</td>
                          <td className="p-4 px-6">
-                            <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                               <div 
-                                 className="h-full bg-cyan-400/50" 
-                                 style={{ width: `${exp.acceptance_rate_percent}%` }}
-                               />
-                            </div>
+                            {exp.parity_verified ? (
+                              <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
+                                <CheckCircle size={14} /> Verified
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2 text-zinc-600 text-xs font-bold">
+                                <XCircle size={14} /> N/A
+                              </div>
+                            )}
                          </td>
                        </tr>
                      ))}

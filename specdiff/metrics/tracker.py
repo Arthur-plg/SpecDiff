@@ -17,6 +17,8 @@ class EngineMetrics:
         self.draft_accepted = 0
         self.draft_total = 0
         self.total_time = 0.0
+        self.parity_verified = False
+        self.perplexity = 0.0
 
     def get_throughput(self) -> float:
         """Overall throughput: total tokens / total wall-clock time (tok/s)."""
@@ -61,4 +63,6 @@ class EngineMetrics:
             "acceptance_rate_percent": self.get_acceptance_rate() * 100,
             "total_time_sec": self.total_time,
             "total_tokens": self.total_tokens,
+            "parity_verified": self.parity_verified,
+            "perplexity": self.perplexity,
         }

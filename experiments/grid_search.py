@@ -86,7 +86,7 @@ def main():
     print(f"[1/{total_runs}] Standard AR baseline...")
     _, metrics_ar = ar_engine.generate(config.prompt, config.max_new_tokens)
     ar_decode_tp = metrics_ar.get_decode_throughput()
-    print(f"  Decode Throughput: {ar_decode_tp:.2f} tok/s | TTFT: {metrics_ar.ttft:.2f} ms")
+    print(f"  Decode Throughput: {ar_decode_tp:.2f} tok/s | TTFT: {metrics_ar.ttft:.2f} ms | PPL: {metrics_ar.perplexity:.2f}")
 
     results.append({
         "timestamp": run_timestamp,
@@ -103,15 +103,18 @@ def main():
     # --- Grid Search ---
     for run_idx, (gamma, T) in enumerate(grid, start=2):
         print(f"\n[{run_idx}/{total_runs}] SpecDiff — gamma={gamma}, T={T}")
-        _, metrics_spec = spec_engine.generate(config.prompt, config.max_new_tokens, gamma, T)
+        _, metrics_spec = spec_engine.generate(config.prompt, config.max_new_tokens, gamma, T, verify_parity=True)
 
         decode_speedup = (
             metrics_spec.get_decode_throughput() / ar_decode_tp
             if ar_decode_tp > 0 else 0
         )
+        parity_str = "PASSED" if metrics_spec.parity_verified else "FAILED"
         print(
-            f"  Decode Throughput: {metrics_spec.get_decode_throughput():.2f} tok/s  |  "
+            f"  Throughput: {metrics_spec.get_decode_throughput():.2f} tok/s  |  "
             f"Acceptance: {metrics_spec.get_acceptance_rate()*100:.1f}%  |  "
+            f"PPL: {metrics_spec.perplexity:.2f}  |  "
+            f"Parity: {parity_str}  |  "
             f"Speedup: {decode_speedup:.2f}x"
         )
 
