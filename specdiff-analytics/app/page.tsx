@@ -198,6 +198,21 @@ export default function Dashboard() {
       return { name: displayName, speedup: best, size };
     }).sort((a, b) => a.size - b.size);
   }, [data]);
+  const throughputData = useMemo(() => {
+    const models = Array.from(new Set(data.map(d => d.target_model)));
+    return models.map(m => {
+      const arRun = data.find(d => d.target_model === m && d.method === "Standard AR");
+      const specRuns = data.filter(d => d.target_model === m && d.method === "SpecDiff");
+      const bestSpec = specRuns.length > 0 ? Math.max(...specRuns.map(r => r.decode_throughput_tok_sec)) : 0;
+      
+      const displayName = m.split('/').pop() || m;
+      return {
+        name: displayName,
+        baseline: arRun ? arRun.decode_throughput_tok_sec : 0,
+        speculative: bestSpec
+      };
+    }).filter(d => d.baseline > 0 || d.speculative > 0);
+  }, [data]);
 
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-100 p-8 font-sans selection:bg-cyan-500/30">
@@ -257,7 +272,7 @@ export default function Dashboard() {
           <div className="glass-card p-6 rounded-2xl border-l-4 border-emerald-500">
              <h3 className="text-sm font-bold text-white mb-2 uppercase tracking-tighter">Key Impact</h3>
              <p className="text-xs text-zinc-400 leading-relaxed">
-                We achieve up to <strong>2.5x throughput gains</strong> across various models while maintaining exact mathematical parity with standard decoding.
+                We achieve up to <strong>{stats?.maxSpeedup.toFixed(1) || "2.5"}x speedup gains</strong> across various models while maintaining exact mathematical parity with standard decoding.
              </p>
           </div>
         </section>
@@ -386,20 +401,18 @@ export default function Dashboard() {
                 </ResponsiveContainer>
               </ChartContainer>
 
-              <ChartContainer title="Throughput Benchmarks">
+              <ChartContainer title="Throughput Benchmarks (tok/s)">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.slice(0, 10)}>
+                  <BarChart data={throughputData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#18181b" vertical={false} />
-                    <XAxis dataKey="target_model" stroke="#52525b" hide />
+                    <XAxis dataKey="name" stroke="#52525b" fontSize={10} tick={{ fill: '#52525b' }} />
                     <YAxis stroke="#52525b" />
                     <Tooltip 
                        contentStyle={{ backgroundColor: "#09090b", border: "1px solid #27272a", borderRadius: "12px" }}
                     />
-                    <Bar dataKey="decode_throughput_tok_sec" radius={[4, 4, 0, 0]}>
-                      {data.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.method === 'SpecDiff' ? '#22d3ee' : '#52525b'} />
-                      ))}
-                    </Bar>
+                    <Legend />
+                    <Bar name="Baseline (Standard AR)" dataKey="baseline" fill="#52525b" radius={[4, 4, 0, 0]} />
+                    <Bar name="SpecDiff (Optimized)" dataKey="speculative" fill="#22d3ee" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </ChartContainer>
