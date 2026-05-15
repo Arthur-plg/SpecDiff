@@ -349,7 +349,7 @@ export default function Dashboard() {
                           return null;
                         }}
                       />
-                      <Scatter data={heatmapData} shape="rect">
+                      <Scatter data={heatmapData} shape="square">
                         {heatmapData.map((entry, index) => {
                           // Map speedup (usually 1.0 to 4.0) to color intensity
                           const intensity = Math.min(Math.max((entry.speedup - 1) / 3, 0), 1);
