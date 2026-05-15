@@ -7,6 +7,13 @@ SpecDiff is a state-of-the-art framework designed to accelerate large-scale diff
 
 The system is optimized for **NVIDIA T4 GPUs**, demonstrating that research-grade speedups (up to 2.5x) are achievable on accessible cloud infrastructure through careful hyperparameter orchestration.
 
+## 📊 Analytics Dashboard
+The results of the SpecDiff framework are visualized through a dedicated [Live Research Platform](https://specdiff-analytics.vercel.app/).
+
+- **Hyperparameter Sensitivity**: Advanced $\gamma \times T$ heatmaps identifying optimal speedup zones.
+- **Model Scaling Analysis**: Evaluating performance gains from 125M (GPT-Neo) to 3B (RedPajama) parameters.
+- **Direct Benchmarking**: Comparative analysis of Standard AR vs. Speculative Throughput.
+
 ## 🧠 Technical Implementation
 This framework implements the core logic described in the paper **"Speculative Diffusion Decoding: Accelerating Language Generation through Diffusion" (arXiv:2408.05636)**.
 
