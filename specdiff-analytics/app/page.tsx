@@ -469,9 +469,17 @@ export default function Dashboard() {
                       />
                       <Scatter data={heatmapData} shape="square">
                         {heatmapData.map((entry, index) => {
-                          // Map speedup (usually 1.0 to 4.0) to color intensity
-                          const intensity = Math.min(Math.max((entry.speedup - 1) / 3, 0), 1);
-                          const color = `rgba(34, 211, 238, ${0.2 + intensity * 0.8})`; // Varying opacity for cyan
+                          // Find min/max for dynamic scaling
+                          const speedups = heatmapData.map(h => h.speedup);
+                          const min = Math.min(...speedups);
+                          const max = Math.max(...speedups);
+                          
+                          // Normalize intensity between 0 and 1
+                          const range = max - min;
+                          const intensity = range > 0 ? (entry.speedup - min) / range : 1;
+                          
+                          // Map intensity to a vibrant color scale (deep indigo to bright cyan)
+                          const color = `rgba(34, 211, 238, ${0.1 + intensity * 0.9})`; 
                           return <Cell key={`cell-${index}`} fill={color} stroke="#22d3ee" strokeWidth={0.5} />;
                         })}
                       </Scatter>
