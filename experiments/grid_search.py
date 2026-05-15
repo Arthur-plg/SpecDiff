@@ -26,11 +26,11 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="SpecDiff grid search experiment")
     parser.add_argument("--config", required=True, help="Path to YAML experiment config")
     parser.add_argument(
-        "--gammas", nargs="+", type=int, default=[4, 8, 16, 32, 48, 64],
+        "--gammas", nargs="+", type=int, default=[1, 2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 28, 32],
         help="List of gamma (draft block size) values to sweep"
     )
     parser.add_argument(
-        "--T_values", nargs="+", type=int, default=[5, 10, 20, 32],
+        "--T_values", nargs="+", type=int, default=[1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70],
         help="List of T (diffusion steps) values to sweep"
     )
     parser.add_argument("--max_new_tokens", type=int, default=None)
