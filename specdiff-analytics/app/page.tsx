@@ -113,222 +113,256 @@ const ChartContainer = ({ title, children }: ChartContainerProps) => (
 );
 
 const SpeculativeDecodingVisualizer = () => {
-  const [step, setStep] = useState(0);
-  const [isAuto, setIsAuto] = useState(true);
-  const [diffusionProgress, setDiffusionProgress] = useState(0);
+  const [stage, setStage] = useState<"AR" | "MDLM" | "VERIFY">("AR");
+  const [arTokens, setArTokens] = useState<string[]>([]);
+  const [diffusionStep, setDiffusionStep] = useState(10); // T -> 0
+  const [verifiedIndex, setVerifiedIndex] = useState(-1);
+  const [gpuLoad, setGpuLoad] = useState(15);
   
-  const steps = [
-    { 
-      title: "1. Parallel Drafting (Diffusion)", 
-      desc: "Unlike autoregressive models, MDLM starts with [MASK] tokens and refines the entire block in parallel over T diffusion steps.", 
-      color: "blue",
-      tokens: [
-        { text: "Speculative", status: "draft" },
-        { text: "decoding", status: "draft" },
-        { text: "is", status: "draft" },
-        { text: "slow", status: "draft" }
-      ]
-    },
-    { 
-      title: "2. Parallel Verification", 
-      desc: "The large Target model (e.g. GPT-Neo 2.7B) verifies the full proposed block in a single forward pass.", 
-      color: "purple",
-      tokens: [
-        { text: "Speculative", status: "checking" },
-        { text: "decoding", status: "checking" },
-        { text: "is", status: "checking" },
-        { text: "fast", status: "checking" }
-      ]
-    },
-    { 
-      title: "3. Greedy Acceptance", 
-      desc: "Tokens are accepted left-to-right. On the first mismatch ('slow' vs 'fast'), the Target's correction is used and the next draft starts.", 
-      color: "emerald",
-      tokens: [
-        { text: "Speculative", status: "accepted" },
-        { text: "decoding", status: "accepted" },
-        { text: "is", status: "accepted" },
-        { text: "fast", status: "corrected" }
-      ]
-    }
-  ];
+  const gamma = 12;
+  const targetText = "Speculative diffusion decoding enables massive speedups";
+  const tokens = targetText.split(" ");
 
-  React.useEffect(() => {
-    if (!isAuto) return;
-    const timer = setInterval(() => {
-      setStep((s) => (s + 1) % steps.length);
-    }, 6000);
-    return () => clearInterval(timer);
-  }, [isAuto, steps.length]);
+  // --- Sequence 1: Autoregressive Baseline ---
+  useEffect(() => {
+    if (stage !== "AR") return;
+    setArTokens([]);
+    setGpuLoad(12);
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i < 4) {
+        setArTokens(prev => [...prev, tokens[i]]);
+        setGpuLoad(45);
+        setTimeout(() => setGpuLoad(12), 600);
+        i++;
+      } else {
+        clearInterval(interval);
+        setTimeout(() => setStage("MDLM"), 2000);
+      }
+    }, 1500);
+    return () => clearInterval(interval);
+  }, [stage]);
 
-  // Diffusion animation simulation for step 0
-  React.useEffect(() => {
-    if (step === 0) {
-      setDiffusionProgress(0);
-      const interval = setInterval(() => {
-        setDiffusionProgress(p => (p < 1 ? p + 0.1 : 1));
-      }, 200);
-      return () => clearInterval(interval);
-    }
-  }, [step]);
+  // --- Sequence 2: MDLM Parallel Speculation ---
+  useEffect(() => {
+    if (stage !== "MDLM") return;
+    setDiffusionStep(5);
+    setGpuLoad(30);
+    const interval = setInterval(() => {
+      setDiffusionStep(prev => {
+        if (prev > 0) return prev - 1;
+        clearInterval(interval);
+        setTimeout(() => setStage("VERIFY"), 1500);
+        return 0;
+      });
+    }, 800);
+    return () => clearInterval(interval);
+  }, [stage]);
+
+  // --- Sequence 3: Parallel Verification ---
+  useEffect(() => {
+    if (stage !== "VERIFY") return;
+    setGpuLoad(100);
+    setVerifiedIndex(-1);
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i < gamma) {
+        setVerifiedIndex(i);
+        i++;
+      } else {
+        clearInterval(interval);
+        setTimeout(() => {
+           setStage("AR");
+           setVerifiedIndex(-1);
+        }, 4000);
+      }
+    }, 150);
+    return () => clearInterval(interval);
+  }, [stage]);
 
   return (
-    <div className="glass-card p-10 rounded-[2.5rem] flex flex-col gap-10 overflow-hidden relative border border-white/5 shadow-2xl">
-      {/* Background Glow */}
+    <div className="glass-card p-12 rounded-[3rem] flex flex-col gap-12 overflow-hidden relative border border-white/5 shadow-2xl min-h-[650px]">
+      {/* Background Decor */}
+      <div className="absolute top-0 left-0 w-full h-1 bg-white/5" />
       <div className={cn(
-        "absolute -top-24 -right-24 w-80 h-80 blur-[140px] transition-all duration-1000 opacity-20",
-        step === 0 ? "bg-blue-500" : step === 1 ? "bg-purple-500" : "bg-emerald-500"
+        "absolute -top-48 -right-48 w-96 h-96 blur-[160px] transition-all duration-1000 opacity-20",
+        stage === "AR" ? "bg-zinc-500" : stage === "MDLM" ? "bg-blue-600" : "bg-emerald-600"
       )} />
 
-      <div className="flex flex-col lg:flex-row gap-12 items-start relative z-10">
-        <div className="flex-1 flex flex-col gap-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center border border-cyan-500/20 shadow-lg shadow-cyan-500/10">
-                <Activity size={20} className="text-cyan-400" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold tracking-tight">SpecDiff Algorithm</h2>
-                <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Faithful to arXiv:2408.05636</p>
-              </div>
-            </div>
-            <button 
-              onClick={() => setIsAuto(!isAuto)}
-              className="text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full border border-white/10 hover:bg-white/5 transition-colors bg-zinc-900/50"
-            >
-              {isAuto ? "Pause Animation" : "Resume Play"}
-            </button>
+      {/* Header & GPU Gauge */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 relative z-20">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+             <div className={cn(
+               "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border",
+               stage === "AR" ? "bg-zinc-500/10 border-zinc-500/20 text-zinc-400" : 
+               stage === "MDLM" ? "bg-blue-500/10 border-blue-500/20 text-blue-400" : 
+               "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+             )}>
+               Current Phase: {stage === "AR" ? "Standard Autoregressive" : stage === "MDLM" ? "MDLM Parallel Drafting" : "Target Verification"}
+             </div>
           </div>
-
-          <div className="space-y-4">
-            {steps.map((s, i) => (
-              <button 
-                key={i}
-                onClick={() => { setStep(i); setIsAuto(false); }}
-                className={cn(
-                  "w-full text-left p-5 rounded-2xl border transition-all duration-300 group relative overflow-hidden",
-                  step === i 
-                    ? "bg-white/5 border-white/10 shadow-xl" 
-                    : "border-transparent opacity-30 hover:opacity-100"
-                )}
-              >
-                {step === i && (
-                  <motion.div 
-                    layoutId="active-step-bar"
-                    className={cn(
-                      "absolute left-0 top-0 bottom-0 w-1",
-                      i === 0 ? "bg-blue-400" : i === 1 ? "bg-purple-400" : "bg-emerald-400"
-                    )}
-                  />
-                )}
-                <div className="flex items-center gap-3 mb-1">
-                  <h4 className="font-bold text-sm text-zinc-200">{s.title}</h4>
-                </div>
-                <AnimatePresence>
-                  {step === i && (
-                    <motion.p 
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="text-xs text-zinc-500 leading-relaxed overflow-hidden"
-                    >
-                      {s.desc}
-                    </motion.p>
-                  )}
-                </AnimatePresence>
-              </button>
-            ))}
-          </div>
+          <h2 className="text-4xl font-bold tracking-tighter">SpecDiff Architecture</h2>
         </div>
 
-        <div className="flex-[1.4] w-full flex flex-col gap-8">
-           <div className="bg-zinc-950/80 rounded-[2rem] border border-white/5 p-10 aspect-[16/10] flex flex-col items-center justify-center relative group shadow-inner">
-              
-              {/* Draft Phase specific visual: MASK tokens */}
-              <div className="flex flex-wrap justify-center gap-4 mb-8">
-                {steps[step].tokens.map((token, i) => (
-                  <motion.div
-                    key={`${step}-${i}`}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: step === 0 ? 0 : i * 0.1, duration: 0.4 }}
-                    className={cn(
-                      "min-w-[100px] py-4 rounded-xl border-2 font-mono text-sm font-bold flex flex-col items-center gap-2 transition-all duration-700 relative",
-                      token.status === "draft" && "bg-blue-500/5 border-blue-500/30 text-blue-400/80",
-                      token.status === "checking" && "bg-purple-500/10 border-purple-500/50 text-purple-400",
-                      token.status === "accepted" && "bg-emerald-500/10 border-emerald-500/50 text-emerald-400",
-                      token.status === "corrected" && "bg-orange-500/10 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.2)] text-orange-400"
-                    )}
-                  >
-                    <span className="text-[9px] uppercase tracking-tighter opacity-40">Position γ{i+1}</span>
-                    <span className="relative">
-                      {step === 0 ? (
-                        diffusionProgress < (i + 1) / 5 ? (
-                          <span className="opacity-30 blur-[2px]">[MASK]</span>
-                        ) : (
-                          <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}>{token.text}</motion.span>
-                        )
-                      ) : (
-                        token.text
-                      )}
+        <div className="flex items-center gap-6 bg-zinc-900/50 p-6 rounded-3xl border border-white/5 backdrop-blur-xl">
+           <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase">GPU Utilization</span>
+              <div className="flex items-center gap-3">
+                <div className="w-32 h-2 bg-zinc-800 rounded-full overflow-hidden">
+                   <motion.div 
+                     animate={{ width: `${gpuLoad}%`, backgroundColor: gpuLoad > 80 ? "#10b981" : gpuLoad > 40 ? "#3b82f6" : "#71717a" }}
+                     className="h-full transition-colors duration-500" 
+                   />
+                </div>
+                <span className="text-sm font-mono font-bold w-12">{gpuLoad}%</span>
+              </div>
+           </div>
+           <div className="w-[1px] h-10 bg-white/10" />
+           <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase">Method</span>
+              <span className="text-sm font-bold text-white">{stage === "AR" ? "Sequential" : "SpecDiff (Parallel)"}</span>
+           </div>
+        </div>
+      </div>
+
+      {/* Main Canvas */}
+      <div className="flex-1 flex flex-col items-center justify-center gap-16 relative z-10">
+        
+        {/* Stage Description Overlay */}
+        <AnimatePresence mode="wait">
+          <motion.div 
+            key={stage}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="absolute top-0 text-center max-w-xl"
+          >
+            <p className="text-zinc-400 text-sm leading-relaxed">
+              {stage === "AR" && "Standard LLMs generate tokens one-by-one. The heavy Target model must wait for each previous token to finish before starting the next pas, wasting GPU bandwidth."}
+              {stage === "MDLM" && `MDLM starts from [MASK] tokens and refines the entire block of γ=${gamma} tokens in just ${diffusionStep} more steps. All tokens evolve simultaneously.`}
+              {stage === "VERIFY" && "The Target model verifies the full speculative block in a single forward pass. This saturates GPU bandwidth and accelerates generation massively."}
+            </p>
+          </motion.div>
+        </AnimatePresence>
+
+        <div className="w-full flex flex-wrap justify-center gap-3 md:gap-4 mt-12">
+          {/* AR Tokens (The Prefix) */}
+          {arTokens.map((t, i) => (
+            <motion.div 
+              key={`ar-${i}`}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="px-5 py-4 rounded-2xl bg-zinc-900 border-2 border-zinc-800 text-zinc-300 font-mono text-sm font-bold shadow-lg"
+            >
+              {t}
+            </motion.div>
+          ))}
+
+          {/* Speculative Block (The Future) */}
+          {(stage === "MDLM" || stage === "VERIFY") && Array.from({ length: gamma }).map((_, i) => {
+            const isAccepted = stage === "VERIFY" && verifiedIndex >= i && i < 8;
+            const isRejected = stage === "VERIFY" && verifiedIndex >= i && i === 8;
+            const isDiscarded = stage === "VERIFY" && verifiedIndex >= 8 && i > 8;
+            
+            return (
+              <div key={`spec-${i}`} className="relative flex flex-col items-center">
+                {/* Probability Mass Vector (R^m) */}
+                <div className="h-20 w-full flex items-end justify-center gap-[2px] mb-2 px-1">
+                   {stage === "MDLM" && diffusionStep < 3 && Array.from({ length: 5 }).map((_, b) => (
+                     <motion.div 
+                        key={b}
+                        initial={{ height: 0 }}
+                        animate={{ height: `${Math.random() * 100}%` }}
+                        transition={{ repeat: Infinity, repeatType: "reverse", duration: 0.5 }}
+                        className="w-[3px] bg-blue-500/40 rounded-full"
+                     />
+                   ))}
+                </div>
+
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ 
+                    opacity: isDiscarded ? 0 : 1, 
+                    y: 0,
+                    scale: isAccepted ? 1.05 : 1,
+                    borderColor: isAccepted ? "#10b981" : isRejected ? "#f43f5e" : stage === "MDLM" ? "#3b82f644" : "#27272a",
+                    backgroundColor: isAccepted ? "#10b98110" : isRejected ? "#f43f5e10" : "#09090b"
+                  }}
+                  className={cn(
+                    "min-w-[70px] h-[55px] rounded-xl border-2 flex items-center justify-center font-mono text-[11px] font-bold transition-all duration-300 relative",
+                    stage === "MDLM" && "text-blue-400"
+                  )}
+                >
+                  {stage === "MDLM" ? (
+                    diffusionStep > 2 ? (
+                       <span className="opacity-20 animate-pulse">
+                         {Math.random().toString(36).substring(7, 11)}
+                       </span>
+                    ) : (
+                       <span>Token_{i}</span>
+                    )
+                  ) : (
+                    <span className={cn(isAccepted ? "text-emerald-400" : isRejected ? "text-rose-400" : "text-zinc-600")}>
+                      {isRejected ? "CORRECT" : tokens[(arTokens.length + i) % tokens.length]}
                     </span>
-                    
-                    {token.status === "corrected" && (
-                      <motion.div 
-                        initial={{ scale: 0, rotate: -45 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        className="absolute -top-3 -right-3 bg-orange-500 text-white p-1.5 rounded-full border-2 border-zinc-950 shadow-lg"
-                      >
-                        <Zap size={12} fill="currentColor" />
+                  )}
+
+                  {/* Status Icons */}
+                  <AnimatePresence>
+                    {isAccepted && (
+                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-3 bg-emerald-500 text-white rounded-full p-1 border-2 border-zinc-950">
+                        <Check size={10} strokeWidth={4} />
                       </motion.div>
                     )}
-                  </motion.div>
-                ))}
+                    {isRejected && (
+                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-3 bg-rose-500 text-white rounded-full p-1 border-2 border-zinc-950">
+                        <X size={10} strokeWidth={4} />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+                
+                <span className="text-[8px] font-mono text-zinc-600 mt-2">γ{i+1}</span>
               </div>
-
-              {/* Algorithm Legend */}
-              <div className="flex flex-col gap-4 w-full max-w-md bg-white/5 p-4 rounded-2xl border border-white/5">
-                 <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-zinc-500">
-                    <span>Drafting Method</span>
-                    <span className="text-blue-400">Masked Diffusion (Parallel)</span>
-                 </div>
-                 <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
-                    <motion.div 
-                       className="h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
-                       animate={{ width: step === 0 ? `${diffusionProgress * 100}%` : "100%" }}
-                    />
-                 </div>
-              </div>
-
-              {/* Laser Scan for Step 2 */}
-              {step === 1 && (
-                <motion.div 
-                  initial={{ top: "10%", opacity: 0 }}
-                  animate={{ top: "90%", opacity: 1 }}
-                  transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                  className="absolute left-10 right-10 h-[2px] bg-gradient-to-r from-transparent via-purple-400 to-transparent shadow-[0_0_15px_rgba(168,85,247,0.8)] z-20"
-                />
-              )}
-           </div>
-
-           {/* Metrics Legend */}
-           <div className="grid grid-cols-3 gap-6">
-              <div className="flex flex-col gap-1">
-                 <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Sampling</span>
-                 <div className="text-lg font-bold text-white flex items-center gap-2">
-                    Non-AR <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-                 </div>
-              </div>
-              <div className="flex flex-col gap-1">
-                 <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Step Type</span>
-                 <div className="text-lg font-bold text-white">Verification</div>
-              </div>
-              <div className="flex flex-col gap-1">
-                 <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Parity</span>
-                 <div className="text-lg font-bold text-emerald-400 font-mono">Guaranteed</div>
-              </div>
-           </div>
+            )
+          })}
         </div>
+
+        {/* Verification Scanner */}
+        {stage === "VERIFY" && (
+           <motion.div 
+             initial={{ x: "-200%" }}
+             animate={{ x: "200%" }}
+             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+             className="absolute bottom-1/2 translate-y-1/2 w-32 h-[300px] bg-gradient-to-r from-transparent via-emerald-500/10 to-transparent pointer-events-none"
+           >
+              <div className="absolute right-0 top-0 bottom-0 w-[2px] bg-emerald-500 shadow-[0_0_20px_#10b981]" />
+           </motion.div>
+        )}
+      </div>
+
+      {/* Footer Steps Indicator */}
+      <div className="grid grid-cols-3 gap-8 relative z-20">
+         {[
+           { id: "AR", label: "Classical AR", icon: Activity, desc: "Step-by-step" },
+           { id: "MDLM", label: "MDLM Draft", icon: Zap, desc: "Parallel Diffusion" },
+           { id: "VERIFY", label: "Target Verify", icon: Gauge, desc: "Batch Validation" }
+         ].map((s) => (
+           <div 
+             key={s.id}
+             className={cn(
+               "flex flex-col gap-2 p-4 rounded-2xl transition-all duration-500 border",
+               stage === s.id ? "bg-white/5 border-white/10" : "opacity-30 border-transparent"
+             )}
+           >
+             <div className="flex items-center gap-2">
+                <s.icon size={14} className={cn(stage === s.id && "text-cyan-400")} />
+                <span className="text-xs font-bold uppercase tracking-widest">{s.label}</span>
+             </div>
+             <p className="text-[10px] text-zinc-500">{s.desc}</p>
+           </div>
+         ))}
       </div>
     </div>
   );
