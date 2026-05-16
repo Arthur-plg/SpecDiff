@@ -115,22 +115,23 @@ const ChartContainer = ({ title, children }: ChartContainerProps) => (
 const SpeculativeDecodingVisualizer = () => {
   const [step, setStep] = useState(0);
   const [isAuto, setIsAuto] = useState(true);
+  const [diffusionProgress, setDiffusionProgress] = useState(0);
   
   const steps = [
     { 
-      title: "1. Draft Proposal", 
-      desc: "The lightweight MDLM model proposes a block of γ tokens in parallel. Unlike standard LLMs, it generates the whole block in a few diffusion steps.", 
+      title: "1. Parallel Drafting (Diffusion)", 
+      desc: "Unlike autoregressive models, MDLM starts with [MASK] tokens and refines the entire block in parallel over T diffusion steps.", 
       color: "blue",
       tokens: [
         { text: "Speculative", status: "draft" },
         { text: "decoding", status: "draft" },
         { text: "is", status: "draft" },
-        { text: "slow", status: "draft" } // Intentionally wrong for step 3 demonstration
+        { text: "slow", status: "draft" }
       ]
     },
     { 
       title: "2. Parallel Verification", 
-      desc: "The large Target model checks the entire block in a single forward pass. It calculates the ideal next tokens for every position simultaneously.", 
+      desc: "The large Target model (e.g. GPT-Neo 2.7B) verifies the full proposed block in a single forward pass.", 
       color: "purple",
       tokens: [
         { text: "Speculative", status: "checking" },
@@ -140,8 +141,8 @@ const SpeculativeDecodingVisualizer = () => {
       ]
     },
     { 
-      title: "3. Acceptance & Correction", 
-      desc: "Matches are accepted instantly. On the first mismatch ('slow' vs 'fast'), the Target model provides the correct token and restarts the loop.", 
+      title: "3. Greedy Acceptance", 
+      desc: "Tokens are accepted left-to-right. On the first mismatch ('slow' vs 'fast'), the Target's correction is used and the next draft starts.", 
       color: "emerald",
       tokens: [
         { text: "Speculative", status: "accepted" },
@@ -156,32 +157,46 @@ const SpeculativeDecodingVisualizer = () => {
     if (!isAuto) return;
     const timer = setInterval(() => {
       setStep((s) => (s + 1) % steps.length);
-    }, 5000);
+    }, 6000);
     return () => clearInterval(timer);
   }, [isAuto, steps.length]);
 
+  // Diffusion animation simulation for step 0
+  React.useEffect(() => {
+    if (step === 0) {
+      setDiffusionProgress(0);
+      const interval = setInterval(() => {
+        setDiffusionProgress(p => (p < 1 ? p + 0.1 : 1));
+      }, 200);
+      return () => clearInterval(interval);
+    }
+  }, [step]);
+
   return (
-    <div className="glass-card p-10 rounded-[2.5rem] flex flex-col gap-10 overflow-hidden relative border border-white/5">
+    <div className="glass-card p-10 rounded-[2.5rem] flex flex-col gap-10 overflow-hidden relative border border-white/5 shadow-2xl">
       {/* Background Glow */}
       <div className={cn(
-        "absolute -top-24 -right-24 w-64 h-64 blur-[120px] transition-all duration-1000 opacity-20",
+        "absolute -top-24 -right-24 w-80 h-80 blur-[140px] transition-all duration-1000 opacity-20",
         step === 0 ? "bg-blue-500" : step === 1 ? "bg-purple-500" : "bg-emerald-500"
       )} />
 
       <div className="flex flex-col lg:flex-row gap-12 items-start relative z-10">
-        <div className="flex-1 flex flex-col gap-6">
+        <div className="flex-1 flex flex-col gap-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center border border-cyan-500/20">
-                <Activity size={16} className="text-cyan-400" />
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center border border-cyan-500/20 shadow-lg shadow-cyan-500/10">
+                <Activity size={20} className="text-cyan-400" />
               </div>
-              <h2 className="text-2xl font-bold tracking-tight">System Mechanism</h2>
+              <div>
+                <h2 className="text-2xl font-bold tracking-tight">SpecDiff Algorithm</h2>
+                <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Faithful to arXiv:2408.05636</p>
+              </div>
             </div>
             <button 
               onClick={() => setIsAuto(!isAuto)}
-              className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border border-white/10 hover:bg-white/5 transition-colors"
+              className="text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full border border-white/10 hover:bg-white/5 transition-colors bg-zinc-900/50"
             >
-              {isAuto ? "Pause Auto" : "Play Auto"}
+              {isAuto ? "Pause Animation" : "Resume Play"}
             </button>
           </div>
 
@@ -191,100 +206,126 @@ const SpeculativeDecodingVisualizer = () => {
                 key={i}
                 onClick={() => { setStep(i); setIsAuto(false); }}
                 className={cn(
-                  "w-full text-left p-4 rounded-2xl border transition-all duration-300 group",
+                  "w-full text-left p-5 rounded-2xl border transition-all duration-300 group relative overflow-hidden",
                   step === i 
                     ? "bg-white/5 border-white/10 shadow-xl" 
-                    : "border-transparent opacity-40 hover:opacity-100"
+                    : "border-transparent opacity-30 hover:opacity-100"
                 )}
               >
+                {step === i && (
+                  <motion.div 
+                    layoutId="active-step-bar"
+                    className={cn(
+                      "absolute left-0 top-0 bottom-0 w-1",
+                      i === 0 ? "bg-blue-400" : i === 1 ? "bg-purple-400" : "bg-emerald-400"
+                    )}
+                  />
+                )}
                 <div className="flex items-center gap-3 mb-1">
-                  <div className={cn(
-                    "w-2 h-2 rounded-full",
-                    i === 0 ? "bg-blue-400" : i === 1 ? "bg-purple-400" : "bg-emerald-400"
-                  )} />
                   <h4 className="font-bold text-sm text-zinc-200">{s.title}</h4>
                 </div>
-                {step === i && (
-                  <motion.p 
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    className="text-xs text-zinc-500 leading-relaxed overflow-hidden"
-                  >
-                    {s.desc}
-                  </motion.p>
-                )}
+                <AnimatePresence>
+                  {step === i && (
+                    <motion.p 
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="text-xs text-zinc-500 leading-relaxed overflow-hidden"
+                    >
+                      {s.desc}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
               </button>
             ))}
           </div>
         </div>
 
-        <div className="flex-[1.2] w-full flex flex-col gap-8">
-           <div className="bg-zinc-950/50 rounded-3xl border border-white/5 p-8 aspect-[16/9] flex items-center justify-center relative group">
-              <div className="flex flex-wrap justify-center gap-3 md:gap-4">
-                <AnimatePresence mode="wait">
-                  {steps[step].tokens.map((token, i) => (
-                    <motion.div
-                      key={`${step}-${i}`}
-                      initial={{ opacity: 0, scale: 0.8, filter: "blur(10px)" }}
-                      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                      transition={{ delay: i * 0.1, duration: 0.5 }}
-                      className={cn(
-                        "px-4 py-3 rounded-xl border-2 font-mono text-sm font-bold flex flex-col items-center gap-1 transition-all duration-500",
-                        token.status === "draft" && "bg-blue-500/10 border-blue-500/50 text-blue-400",
-                        token.status === "checking" && "bg-purple-500/10 border-purple-500/50 text-purple-400",
-                        token.status === "accepted" && "bg-emerald-500/10 border-emerald-500/50 text-emerald-400",
-                        token.status === "corrected" && "bg-orange-500/10 border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)] text-orange-400"
+        <div className="flex-[1.4] w-full flex flex-col gap-8">
+           <div className="bg-zinc-950/80 rounded-[2rem] border border-white/5 p-10 aspect-[16/10] flex flex-col items-center justify-center relative group shadow-inner">
+              
+              {/* Draft Phase specific visual: MASK tokens */}
+              <div className="flex flex-wrap justify-center gap-4 mb-8">
+                {steps[step].tokens.map((token, i) => (
+                  <motion.div
+                    key={`${step}-${i}`}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: step === 0 ? 0 : i * 0.1, duration: 0.4 }}
+                    className={cn(
+                      "min-w-[100px] py-4 rounded-xl border-2 font-mono text-sm font-bold flex flex-col items-center gap-2 transition-all duration-700 relative",
+                      token.status === "draft" && "bg-blue-500/5 border-blue-500/30 text-blue-400/80",
+                      token.status === "checking" && "bg-purple-500/10 border-purple-500/50 text-purple-400",
+                      token.status === "accepted" && "bg-emerald-500/10 border-emerald-500/50 text-emerald-400",
+                      token.status === "corrected" && "bg-orange-500/10 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.2)] text-orange-400"
+                    )}
+                  >
+                    <span className="text-[9px] uppercase tracking-tighter opacity-40">Position γ{i+1}</span>
+                    <span className="relative">
+                      {step === 0 ? (
+                        diffusionProgress < (i + 1) / 5 ? (
+                          <span className="opacity-30 blur-[2px]">[MASK]</span>
+                        ) : (
+                          <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}>{token.text}</motion.span>
+                        )
+                      ) : (
+                        token.text
                       )}
-                    >
-                      <span className="text-[10px] uppercase tracking-tighter opacity-50 mb-1">T{i+1}</span>
-                      {token.text}
-                      {token.status === "corrected" && (
-                        <motion.div 
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className="absolute -top-2 -right-2 bg-orange-500 text-white p-1 rounded-full border-2 border-zinc-950"
-                        >
-                          <Zap size={10} fill="currentColor" />
-                        </motion.div>
-                      )}
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
+                    </span>
+                    
+                    {token.status === "corrected" && (
+                      <motion.div 
+                        initial={{ scale: 0, rotate: -45 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        className="absolute -top-3 -right-3 bg-orange-500 text-white p-1.5 rounded-full border-2 border-zinc-950 shadow-lg"
+                      >
+                        <Zap size={12} fill="currentColor" />
+                      </motion.div>
+                    )}
+                  </motion.div>
+                ))}
               </div>
 
-              {/* Scanning Line for Step 2 */}
+              {/* Algorithm Legend */}
+              <div className="flex flex-col gap-4 w-full max-w-md bg-white/5 p-4 rounded-2xl border border-white/5">
+                 <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-zinc-500">
+                    <span>Drafting Method</span>
+                    <span className="text-blue-400">Masked Diffusion (Parallel)</span>
+                 </div>
+                 <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
+                    <motion.div 
+                       className="h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                       animate={{ width: step === 0 ? `${diffusionProgress * 100}%` : "100%" }}
+                    />
+                 </div>
+              </div>
+
+              {/* Laser Scan for Step 2 */}
               {step === 1 && (
                 <motion.div 
-                  initial={{ left: "5%" }}
-                  animate={{ left: "95%" }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute top-8 bottom-8 w-1 bg-gradient-to-b from-transparent via-purple-400 to-transparent shadow-[0_0_20px_rgba(168,85,247,0.5)] z-20"
+                  initial={{ top: "10%", opacity: 0 }}
+                  animate={{ top: "90%", opacity: 1 }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                  className="absolute left-10 right-10 h-[2px] bg-gradient-to-r from-transparent via-purple-400 to-transparent shadow-[0_0_15px_rgba(168,85,247,0.8)] z-20"
                 />
               )}
-
-              {/* Label for models */}
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4">
-                 <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500">
-                    <div className="w-2 h-2 rounded-full bg-blue-500" /> Draft Model (MDLM)
-                 </div>
-                 <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500">
-                    <div className="w-2 h-2 rounded-full bg-purple-500" /> Target Model (GPT)
-                 </div>
-              </div>
            </div>
 
-           <div className="grid grid-cols-3 gap-4 text-center">
-              <div className="p-4 rounded-2xl bg-zinc-900/50 border border-white/5">
-                 <div className="text-zinc-500 text-[10px] font-bold uppercase mb-1">Theoretical Max</div>
-                 <div className="text-xl font-bold text-white">γ + 1</div>
+           {/* Metrics Legend */}
+           <div className="grid grid-cols-3 gap-6">
+              <div className="flex flex-col gap-1">
+                 <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Sampling</span>
+                 <div className="text-lg font-bold text-white flex items-center gap-2">
+                    Non-AR <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                 </div>
               </div>
-              <div className="p-4 rounded-2xl bg-zinc-900/50 border border-white/5">
-                 <div className="text-zinc-500 text-[10px] font-bold uppercase mb-1">Verified Parity</div>
-                 <div className="text-xl font-bold text-emerald-400 font-mono">100%</div>
+              <div className="flex flex-col gap-1">
+                 <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Step Type</span>
+                 <div className="text-lg font-bold text-white">Verification</div>
               </div>
-              <div className="p-4 rounded-2xl bg-zinc-900/50 border border-white/5">
-                 <div className="text-zinc-500 text-[10px] font-bold uppercase mb-1">Latency Savings</div>
-                 <div className="text-xl font-bold text-cyan-400">~65%</div>
+              <div className="flex flex-col gap-1">
+                 <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Parity</span>
+                 <div className="text-lg font-bold text-emerald-400 font-mono">Guaranteed</div>
               </div>
            </div>
         </div>
