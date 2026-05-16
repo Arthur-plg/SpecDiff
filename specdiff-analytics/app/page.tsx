@@ -197,7 +197,7 @@ export default function Dashboard() {
   // --- Logic ---
   React.useEffect(() => {
     // Auto-load demo data if available in public folder
-    fetch("/data.csv")
+    fetch("/data2.csv")
       .then(res => res.text())
       .then(csvText => {
         if (csvText && csvText.startsWith("timestamp")) {
