@@ -114,74 +114,180 @@ const ChartContainer = ({ title, children }: ChartContainerProps) => (
 
 const SpeculativeDecodingVisualizer = () => {
   const [step, setStep] = useState(0);
+  const [isAuto, setIsAuto] = useState(true);
   
-  React.useEffect(() => {
-    const timer = setInterval(() => {
-      setStep((s) => (s + 1) % 4);
-    }, 3000);
-    return () => clearInterval(timer);
-  }, []);
-
   const steps = [
-    { title: "Draft Proposal", desc: "Fast MDLM model generates a block of γ candidate tokens in parallel.", color: "text-blue-400" },
-    { title: "Parallel Verification", desc: "Large Target model verifies the entire block in a single forward pass.", color: "text-purple-400" },
-    { title: "Greedy Acceptance", desc: "Tokens matching the target model's prediction are accepted instantly.", color: "text-emerald-400" },
-    { title: "Mathematical Parity", desc: "Final output is identical to standard autoregressive decoding.", color: "text-cyan-400" }
+    { 
+      title: "1. Draft Proposal", 
+      desc: "The lightweight MDLM model proposes a block of γ tokens in parallel. Unlike standard LLMs, it generates the whole block in a few diffusion steps.", 
+      color: "blue",
+      tokens: [
+        { text: "Speculative", status: "draft" },
+        { text: "decoding", status: "draft" },
+        { text: "is", status: "draft" },
+        { text: "slow", status: "draft" } // Intentionally wrong for step 3 demonstration
+      ]
+    },
+    { 
+      title: "2. Parallel Verification", 
+      desc: "The large Target model checks the entire block in a single forward pass. It calculates the ideal next tokens for every position simultaneously.", 
+      color: "purple",
+      tokens: [
+        { text: "Speculative", status: "checking" },
+        { text: "decoding", status: "checking" },
+        { text: "is", status: "checking" },
+        { text: "fast", status: "checking" }
+      ]
+    },
+    { 
+      title: "3. Acceptance & Correction", 
+      desc: "Matches are accepted instantly. On the first mismatch ('slow' vs 'fast'), the Target model provides the correct token and restarts the loop.", 
+      color: "emerald",
+      tokens: [
+        { text: "Speculative", status: "accepted" },
+        { text: "decoding", status: "accepted" },
+        { text: "is", status: "accepted" },
+        { text: "fast", status: "corrected" }
+      ]
+    }
   ];
 
-  return (
-    <div className="glass-card p-8 rounded-3xl flex flex-col lg:flex-row gap-12 items-center">
-      <div className="flex-1 flex flex-col gap-4">
-        <div className="flex items-center gap-2">
-          <div className="px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-[10px] font-bold uppercase tracking-widest">Mechanism</div>
-          <h2 className="text-3xl font-bold">How SpecDiff Works</h2>
-        </div>
-        <div className="h-24">
-          <AnimatePresence mode="wait">
-            <motion.div 
-              key={step}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="flex flex-col gap-2"
-            >
-              <h4 className={cn("text-lg font-bold", steps[step].color)}>{steps[step].title}</h4>
-              <p className="text-zinc-500 text-sm leading-relaxed">{steps[step].desc}</p>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-        <div className="flex gap-2 mt-4">
-          {steps.map((_, i) => (
-            <div key={i} className={cn("h-1 rounded-full transition-all duration-500", i === step ? "w-8 bg-cyan-400" : "w-4 bg-zinc-800")} />
-          ))}
-        </div>
-      </div>
+  React.useEffect(() => {
+    if (!isAuto) return;
+    const timer = setInterval(() => {
+      setStep((s) => (s + 1) % steps.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [isAuto, steps.length]);
 
-      <div className="flex-1 w-full max-w-md aspect-video bg-zinc-950 rounded-2xl border border-white/5 relative overflow-hidden flex items-center justify-center p-8">
-         <div className="flex gap-4">
-            {[0, 1, 2, 3].map((i) => (
-              <motion.div 
+  return (
+    <div className="glass-card p-10 rounded-[2.5rem] flex flex-col gap-10 overflow-hidden relative border border-white/5">
+      {/* Background Glow */}
+      <div className={cn(
+        "absolute -top-24 -right-24 w-64 h-64 blur-[120px] transition-all duration-1000 opacity-20",
+        step === 0 ? "bg-blue-500" : step === 1 ? "bg-purple-500" : "bg-emerald-500"
+      )} />
+
+      <div className="flex flex-col lg:flex-row gap-12 items-start relative z-10">
+        <div className="flex-1 flex flex-col gap-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center border border-cyan-500/20">
+                <Activity size={16} className="text-cyan-400" />
+              </div>
+              <h2 className="text-2xl font-bold tracking-tight">System Mechanism</h2>
+            </div>
+            <button 
+              onClick={() => setIsAuto(!isAuto)}
+              className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border border-white/10 hover:bg-white/5 transition-colors"
+            >
+              {isAuto ? "Pause Auto" : "Play Auto"}
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {steps.map((s, i) => (
+              <button 
                 key={i}
-                animate={{ 
-                  scale: step >= 1 ? 1.05 : 1,
-                  backgroundColor: step === 0 ? "#2563eb33" : step === 1 ? "#a855f733" : "#10b98133",
-                  borderColor: step === 0 ? "#3b82f6" : step === 1 ? "#a855f7" : "#10b981",
-                  opacity: step === 0 && i > 1 ? 0.3 : 1
-                }}
-                className="w-12 h-16 rounded-lg border-2 flex items-center justify-center font-mono text-xs font-bold"
+                onClick={() => { setStep(i); setIsAuto(false); }}
+                className={cn(
+                  "w-full text-left p-4 rounded-2xl border transition-all duration-300 group",
+                  step === i 
+                    ? "bg-white/5 border-white/10 shadow-xl" 
+                    : "border-transparent opacity-40 hover:opacity-100"
+                )}
               >
-                {step === 0 ? "Draft" : step === 1 ? "Check" : "Pass"}
-              </motion.div>
+                <div className="flex items-center gap-3 mb-1">
+                  <div className={cn(
+                    "w-2 h-2 rounded-full",
+                    i === 0 ? "bg-blue-400" : i === 1 ? "bg-purple-400" : "bg-emerald-400"
+                  )} />
+                  <h4 className="font-bold text-sm text-zinc-200">{s.title}</h4>
+                </div>
+                {step === i && (
+                  <motion.p 
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    className="text-xs text-zinc-500 leading-relaxed overflow-hidden"
+                  >
+                    {s.desc}
+                  </motion.p>
+                )}
+              </button>
             ))}
-         </div>
-         {step === 1 && (
-           <motion.div 
-             initial={{ left: -10 }}
-             animate={{ left: "110%" }}
-             transition={{ duration: 1.5, ease: "linear" }}
-             className="absolute top-0 bottom-0 w-1 bg-gradient-to-b from-transparent via-purple-400 to-transparent shadow-[0_0_20px_rgba(168,85,247,0.5)]"
-           />
-         )}
+          </div>
+        </div>
+
+        <div className="flex-[1.2] w-full flex flex-col gap-8">
+           <div className="bg-zinc-950/50 rounded-3xl border border-white/5 p-8 aspect-[16/9] flex items-center justify-center relative group">
+              <div className="flex flex-wrap justify-center gap-3 md:gap-4">
+                <AnimatePresence mode="wait">
+                  {steps[step].tokens.map((token, i) => (
+                    <motion.div
+                      key={`${step}-${i}`}
+                      initial={{ opacity: 0, scale: 0.8, filter: "blur(10px)" }}
+                      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                      transition={{ delay: i * 0.1, duration: 0.5 }}
+                      className={cn(
+                        "px-4 py-3 rounded-xl border-2 font-mono text-sm font-bold flex flex-col items-center gap-1 transition-all duration-500",
+                        token.status === "draft" && "bg-blue-500/10 border-blue-500/50 text-blue-400",
+                        token.status === "checking" && "bg-purple-500/10 border-purple-500/50 text-purple-400",
+                        token.status === "accepted" && "bg-emerald-500/10 border-emerald-500/50 text-emerald-400",
+                        token.status === "corrected" && "bg-orange-500/10 border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)] text-orange-400"
+                      )}
+                    >
+                      <span className="text-[10px] uppercase tracking-tighter opacity-50 mb-1">T{i+1}</span>
+                      {token.text}
+                      {token.status === "corrected" && (
+                        <motion.div 
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="absolute -top-2 -right-2 bg-orange-500 text-white p-1 rounded-full border-2 border-zinc-950"
+                        >
+                          <Zap size={10} fill="currentColor" />
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+
+              {/* Scanning Line for Step 2 */}
+              {step === 1 && (
+                <motion.div 
+                  initial={{ left: "5%" }}
+                  animate={{ left: "95%" }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute top-8 bottom-8 w-1 bg-gradient-to-b from-transparent via-purple-400 to-transparent shadow-[0_0_20px_rgba(168,85,247,0.5)] z-20"
+                />
+              )}
+
+              {/* Label for models */}
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4">
+                 <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500">
+                    <div className="w-2 h-2 rounded-full bg-blue-500" /> Draft Model (MDLM)
+                 </div>
+                 <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500">
+                    <div className="w-2 h-2 rounded-full bg-purple-500" /> Target Model (GPT)
+                 </div>
+              </div>
+           </div>
+
+           <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="p-4 rounded-2xl bg-zinc-900/50 border border-white/5">
+                 <div className="text-zinc-500 text-[10px] font-bold uppercase mb-1">Theoretical Max</div>
+                 <div className="text-xl font-bold text-white">γ + 1</div>
+              </div>
+              <div className="p-4 rounded-2xl bg-zinc-900/50 border border-white/5">
+                 <div className="text-zinc-500 text-[10px] font-bold uppercase mb-1">Verified Parity</div>
+                 <div className="text-xl font-bold text-emerald-400 font-mono">100%</div>
+              </div>
+              <div className="p-4 rounded-2xl bg-zinc-900/50 border border-white/5">
+                 <div className="text-zinc-500 text-[10px] font-bold uppercase mb-1">Latency Savings</div>
+                 <div className="text-xl font-bold text-cyan-400">~65%</div>
+              </div>
+           </div>
+        </div>
       </div>
     </div>
   );
