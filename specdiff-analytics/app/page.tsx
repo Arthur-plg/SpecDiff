@@ -124,7 +124,7 @@ const SpeculativeDecodingVisualizer = () => {
   const tokens = targetText.split(" ");
 
   // --- Sequence 1: Autoregressive Baseline ---
-  useEffect(() => {
+  React.useEffect(() => {
     if (stage !== "AR") return;
     setArTokens([]);
     setGpuLoad(12);
@@ -144,7 +144,7 @@ const SpeculativeDecodingVisualizer = () => {
   }, [stage]);
 
   // --- Sequence 2: MDLM Parallel Speculation ---
-  useEffect(() => {
+  React.useEffect(() => {
     if (stage !== "MDLM") return;
     setDiffusionStep(5);
     setGpuLoad(30);
@@ -160,7 +160,7 @@ const SpeculativeDecodingVisualizer = () => {
   }, [stage]);
 
   // --- Sequence 3: Parallel Verification ---
-  useEffect(() => {
+  React.useEffect(() => {
     if (stage !== "VERIFY") return;
     setGpuLoad(100);
     setVerifiedIndex(-1);
