@@ -30,7 +30,7 @@ def parse_args() -> argparse.Namespace:
         help="List of gamma (draft block size) values to sweep"
     )
     parser.add_argument(
-        "--T_values", nargs="+", type=int, default=[1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70],
+        "--T_values", nargs="+", type=int, default=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         help="List of T (diffusion steps) values to sweep"
     )
     parser.add_argument("--max_new_tokens", type=int, default=None)
