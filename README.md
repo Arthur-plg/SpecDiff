@@ -1,20 +1,20 @@
-# SpecDiff Framework 🚀
+# SpecDiff Framework 
 
 A modular, high-performance benchmarking framework for **Speculative Diffusion Decoding** using Masked Diffusion Language Models (MDLM).
 
-## 🚀 Overview
+## Overview
 SpecDiff is a state-of-the-art framework designed to accelerate large-scale diffusion language models. Unlike traditional speculative decoding, we utilize a **Masked Diffusion Language Model (MDLM)** as a high-fidelity draft model, allowing for non-autoregressive token proposals.
 
 The system is optimized for **NVIDIA T4 GPUs**, demonstrating that research-grade speedups (up to 2.5x) are achievable on accessible cloud infrastructure through careful hyperparameter orchestration.
 
-## 📊 Analytics Dashboard
+## Analytics Dashboard
 The results of the SpecDiff framework are visualized through a dedicated [Live Research Platform](https://specdiff-analytics.vercel.app/).
 
 - **Hyperparameter Sensitivity**: Advanced $\gamma \times T$ heatmaps identifying optimal speedup zones.
 - **Model Scaling Analysis**: Evaluating performance gains from 125M (GPT-Neo) to 3B (RedPajama) parameters.
 - **Direct Benchmarking**: Comparative analysis of Standard AR vs. Speculative Throughput.
 
-## 🧠 Technical Implementation
+## Technical Implementation
 This framework implements the core logic described in the paper **"Speculative Diffusion Decoding: Accelerating Language Generation through Diffusion" (arXiv:2408.05636)**.
 
 ### Key Engineering Choices:
@@ -22,7 +22,7 @@ This framework implements the core logic described in the paper **"Speculative D
 - **Vocabulary Alignment**: The engine includes a model-agnostic `align_logits` layer to bridge potential discrepancies between the MDLM draft tokenizer and various Target LLMs (GPT-2, GPT-Neo, RedPajama).
 - **Parallel Verification**: Full utilization of PyTorch vectorization to verify draft blocks of up to $\gamma=64$ in a single forward pass.
 
-## 📁 Project Structure
+## Project Structure
 ```text
 SpecDiff_project/
 │
@@ -48,7 +48,7 @@ SpecDiff_project/
 └── pyproject.toml               # Package installation
 ```
 
-## 🛠 Installation
+## Installation
 
 ```bash
 git clone https://github.com/Arthur-plg/SpecDiff.git
@@ -56,7 +56,7 @@ cd SpecDiff
 pip install -e .
 ```
 
-## 📊 Analytics & Dashboards
+## Analytics & Dashboards
 
 ### Live Research Platform (Next.js + Vercel)
 **The official public dashboard.** Hosted on Vercel for instant sharing and professional analysis.
@@ -64,7 +64,7 @@ pip install -e .
 - **Interactive**: Full research-grade charts (Scaling, Heatmaps, α-Impact).
 - **Public URL**: `https://specdiff-analytics.vercel.app` (Replace with your actual URL)
 
-## 🧪 Running Experiments
+## Running Experiments
 
 ### Single Generation
 ```bash
@@ -81,7 +81,7 @@ python experiments/grid_search.py --config configs/gptneo_mdlm.yaml
 !python experiments/grid_search.py --config configs/redpajama_mdlm.yaml --results_dir "/content/drive/MyDrive/SpecDiff_Results"
 ```
 
-## 🧩 Adding Your Own Model
+## Adding Your Own Model
 The framework is fully extensible. To add a custom model:
 1. Create a wrapper in `specdiff/models/`.
 2. Register it in `specdiff/registry.py`.
